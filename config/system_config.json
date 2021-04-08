@@ -12,9 +12,9 @@
       "host": "smtp.gmail.com",
       "port": 465,
       "secure": true,
-      "user": "reliefems@gmail.com",
-      "pass": "emsems@123",
-      "from": "<Relief>"
+      "user": "",
+      "pass": "",
+      "from": ""
     }
   }
 }
