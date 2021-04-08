@@ -214,7 +214,7 @@ function successDetails(emp) {
             //console.log(jresult, jerr, 'jresult');
             if (!jerr) {
                 let name = jresult[0][0]['user_name'];
-                let sendEmail = mail.send_mail('mohamedbilalminhaj@gmail.com', emp.name, emp.content, '');
+                let sendEmail = mail.send_mail(emp.email, emp.name, emp.content, '');
 
             }
 
