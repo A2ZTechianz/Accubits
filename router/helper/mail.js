@@ -12,7 +12,7 @@ const get_live_password_url = sys_config["system_config"]["mail_config"]["pass"]
 const get_live_from_address_url = sys_config["system_config"]["mail_config"]["from"];
 console.log(get_live_host_url, 'get_live_host_url')
 module.exports.send_mail = function (to_mail, subject, content, bcc) {
-    // console.log(to_mail, subject, html, bcc,'to_mail, subject, html, bcc')
+    console.log(to_mail, subject, content, bcc, 'to_mail, subject, html, bcc')
     let transporter = nodemailer.createTransport({
         host: get_live_host_url,
         port: get_live_port_url,

@@ -5,13 +5,14 @@ const Joi = require("joi");
 const validateRequest = require('../helper/validate_request');
 const path = require('path');
 const fs = require('fs');
+let mail = require('../helper/mail');
 
 const csv = require('csvtojson')
 module.exports.signupSchema = function (req, res, next) {
     console.log('hai1');
     const schema = Joi.object({
         firstname: Joi.string().required(),
-        lastname: Joi.number().required(),
+        lastname: Joi.string().required(),
         email: Joi.string().required(),
         age: Joi.number().required(),
     });
@@ -21,42 +22,59 @@ module.exports.signupSchema = function (req, res, next) {
 
 module.exports.signup = function (req, res) {
 
-    let str_sql = 'call usp_user_signup(?)';
-    let params = [
-        req.body.firstname,
-        req.body.lastname,
-        req.body.email,
-        req.body.age
-    ]
+    try {
+        let str_sql = 'call usp_user_signup(?)';
+        let params = [
+            req.body.firstname,
+            req.body.lastname,
+            req.body.email,
+            req.body.age
+        ]
 
-    connection.query(str_sql, [params], function (err, result) {
-        if (!err) {
+        connection.query(str_sql, [params], function (err, result) {
+            if (!err) {
 
-            res.status(200).json({
-                status: true,
-                message: 'user added'
-            })
+                res.status(200).json({
+                    status: true,
+                    message: result[0][0]['msg']
+                })
 
-        } else {
-            res.status(500).json({
-                status: false,
-                message: err
-            })
-        }
+            } else {
+                res.status(500).json({
+                    status: false,
+                    message: err
+                })
+            }
 
-    })
+        })
+    } catch (e) {
+        res.status(500).json({
+
+            status: false,
+            message: e
+        })
+    }
 }
 
 
 
 module.exports.newsletter = function (req, res) {
 
-    mailQueue();
-    res.status(200).json({
+    try {
+        mailQueue();
+        res.status(200).json({
 
-        status: true,
-        message: 'mail starts trigger'
-    })
+            status: true,
+            message: 'mail starts trigger'
+        })
+    } catch (e) {
+        res.status(500).json({
+
+            status: false,
+            message: e
+        })
+    }
+
 
 
 }
@@ -67,13 +85,12 @@ function mailQueue() {
 
     try {
 
-        console.log('mail');
-
+        const errArray = [];
         // dummy file is uploaded in the below path
         let file_url = path.join(__dirname, '../../news.csv');;
 
-        //  function will convert the file into json data 
-        const errArray = [];
+        //  function will convert the file data into json data 
+
         let file = csv()
             .fromFile(file_url)
             .then((arrayData) => {
@@ -83,15 +100,6 @@ function mailQueue() {
                 arrayData.forEach(emp => {
 
                     let record = 0;
-                    let temp_params = [
-
-                        emp['email'] //email
-
-
-
-                    ];
-
-
 
                     // check email is exisiting or not
                     if (emp['email'] != '') {} else {
@@ -120,12 +128,8 @@ function mailQueue() {
                     }
 
 
-                    // console.log(emp, 'emp');
 
-
-                    // throw error and save in db logs for reference
-
-
+                    // if record is 1 then it will call the failure response else success
                     if (record == 1) {
                         errDetails(errArray);
                     } else {
@@ -134,24 +138,20 @@ function mailQueue() {
 
 
 
-                    // connection.query(sql_temp_str, [temp_params], function (jerr, jresult) {
-                    //console.log(temp_params, 'temp');
 
 
                 });
 
 
 
-                // })
+
 
 
             })
 
 
 
-        // errArray is declared to store the failure response in the db
 
-        // check the sheet is present & record count is greater than 0
 
 
 
@@ -168,13 +168,63 @@ function mailQueue() {
 
 
 function errDetails(err_obj) {
-    console.log(err_obj, "err_objerr_objerr_objerr_obj");
+
+    try {
+        let sql_temp_str = 'call usp_store_log(?)';
+        let temp_params = [
+            JSON.stringify(err_obj),
+            null,
+            null,
+            'FAILURE'
+        ]
+        connection.query(sql_temp_str, [temp_params], function (jerr, jresult) {
+
+            if (jerr) {
+
+                console.log(jerr);
+            }
+
+
+
+        });
+
+    } catch (e) {
+        console.log(e);
+    }
+
 
 
 }
 
 function successDetails(emp) {
-    console.log(emp, "sucess");
+
+    try {
+        // console.log(emp, "sucess");
+
+        let sql_temp_str = 'call usp_store_log(?)';
+        let temp_params = [
+
+            JSON.stringify(emp),
+            emp.email,
+            emp.name,
+            'SUCCESS'
+        ]
+        connection.query(sql_temp_str, [temp_params], function (jerr, jresult) {
+
+            //console.log(jresult, jerr, 'jresult');
+            if (!jerr) {
+                let name = jresult[0][0]['user_name'];
+                let sendEmail = mail.send_mail('mohamedbilalminhaj@gmail.com', emp.name, emp.content, '');
+
+            }
+
+
+
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
 
 
 }
